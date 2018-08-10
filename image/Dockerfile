@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.8
 
 # Setup userland
 RUN addgroup -S amon \
@@ -24,7 +24,10 @@ RUN apk --no-cache --update add \
 WORKDIR /opt/amon
 
 RUN git clone https://github.com/amonapp/amon.git . \
-  && git checkout master
+  && git checkout master \
+  && echo >> amon/settings.py \
+  && echo >> amon/settings.py \
+  && echo 'CSRF_TRUSTED_ORIGINS = [host_struct.hostname,]' >> amon/settings.py
 
 RUN pip3 install -r ./requirements.txt
 

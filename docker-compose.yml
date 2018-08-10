@@ -1,22 +1,61 @@
-version: '2'
+version: '3.5'
+
 services:
   amon:
-    build: "./image"
-    ports:
-      - "80:80"
-      - "443:443"
+    build: ./image
     depends_on:
-      - mongo
+    - mongo
     environment:
-      - MONGO_URI=mongodb://mongo:27017
-      - AMON_PROTO=http
-      - AMON_HOSTNAME=mondomain.exemple
+      AMON_HOSTNAME: amon.example.de
+      AMON_PROTO: https
+      MONGO_URI: mongodb://mongo:27017
+      SMTP_HOST: mail.gmail.com
+      SMTP_USERNAME: username
+      SMTP_PASSWORD: password
+      SMTP_PORT: 587
+      SMTP_USE_TLS: "true"
+      SMTP_SENT_FROM: alerts@example.de
+    labels:
+      traefik.docker.network: traefik
+      traefik.enable: "true"
+      traefik.frontend.rule: Host:amon.example.de
+      traefik.port: '80'
+    networks:
+      mongo: null
+      traefik: null
     volumes:
-      - "./amon:/etc/opt/amon/"
-      - "./log:/var/log/amon/"
-
+    - amon:/etc/opt/amon:rw
   mongo:
-    image: "mongo:latest"
     command: --smallfiles
+    image: mongo:latest
+    networks:
+      mongo: null
     volumes:
-      - ./db:/data/db
+    - mongo:/data/db:rw
+  traefik:
+    container_name: traefik
+    image: traefik:1.6
+    networks:
+      traefik: null
+    ports:
+    - published: 80
+      target: 80
+    - published: 443
+      target: 443
+    - published: 8080
+      target: 8080
+    volumes:
+    - traefik-data:/data
+    - ./traefik-config/traefik.toml:/traefik.toml
+    - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  amon: {}
+  mongo: {}
+  traefik-data: {}
+
+networks:
+  mongo: {}
+  traefik:
+    driver: bridge
+    name: traefik
